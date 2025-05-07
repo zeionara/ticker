@@ -1,4 +1,5 @@
 from time import sleep
+from datetime import datetime
 from os import getenv
 import asyncio
 
@@ -13,6 +14,8 @@ INTERVAL = 20  # seconds
 TG_BOT_TOKEN = getenv('TG_BOT_TOKEN')
 TG_CHAT_ID = int(getenv('TG_CHAT_ID'))
 
+URL = 'https://tickets.hermitagemuseum.org/event/{hash_id}'
+
 
 @group()
 def main():
@@ -21,9 +24,13 @@ def main():
 
 def notify(app: Application, hash_id: str):
     async def send_message():
-        await app.bot.sendMessage(TG_CHAT_ID, 'The tickets are released!\n\n' + f'https://tickets.hermitagemuseum.org/event/{hash_id}')
+        await app.bot.sendMessage(TG_CHAT_ID, 'The tickets are released!\n\n' + URL.format(hash_id = hash_id))
 
     asyncio.run(send_message())
+
+
+def now():
+    return datetime.now().strftime('%d-%m-%Y %H:%M:%S')
 
 
 @main.command()
@@ -51,9 +58,11 @@ def track(url: str, insecure: bool, interval: int):
 
                 if response['response']['action']:
                     notify(app, hash_id)
+
+                    print(f'{now()} The tickets are available @ {URL.format(hash_id = hash_id)}. Notification has been sent.')
                     return
                 else:
-                    print(f'The tickets are not available. Retrying in {interval} seconds.')
+                    print(f'{now()} The tickets are not available @ {URL.format(hash_id = hash_id)}. Retrying in {interval} seconds.')
                     # print(response)
                     # print()
 
