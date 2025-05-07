@@ -29,7 +29,8 @@ def notify(app: Application, hash_id: str):
 @main.command()
 @argument('url', type = str, default = 'https://tickets.hermitagemuseum.org/api/afisha')
 @option('--insecure', '-i', is_flag = True)
-def track(url: str, insecure: bool):
+@option('--interval', '-t', type = int, default = INTERVAL)
+def track(url: str, insecure: bool, interval: int):
     app = ApplicationBuilder().token(TG_BOT_TOKEN).build()
 
     while True:
@@ -49,18 +50,14 @@ def track(url: str, insecure: bool):
                 response = page.json()
 
                 if response['response']['action']:
-                    print('SUCCESS')
-                    print(response)
-
                     notify(app, hash_id)
                     return
                 else:
-                    print(f'No success. Retrying in {INTERVAL} seconds.')
-                    print(f'Url: https://tickets.hermitagemuseum.org/event/{hash_id}')
-                    print(response)
-                    print()
+                    print(f'The tickets are not available. Retrying in {interval} seconds.')
+                    # print(response)
+                    # print()
 
-                    sleep(INTERVAL)
+                    sleep(interval)
                     break
 
 

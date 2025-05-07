@@ -17,7 +17,15 @@ pip install click requests python-telegram-bot
 The run polling to wait until free tickets become available on [the website][hermitage]:
 
 ```sh
-TG_BOT_TOKEN='foo' TG_CHAT_ID='bar' python -m ticker track -i
+TG_BOT_TOKEN='foo' TG_CHAT_ID='bar' python -m ticker track -it 5
+```
+
+## Additional options
+
+To disable insecure HTTPS warnings:
+
+```sh
+export PYTHONWARNINGS="ignore:Unverified HTTPS request"
 ```
 
 [hermitage]: https://tickets.hermitagemuseum.org
