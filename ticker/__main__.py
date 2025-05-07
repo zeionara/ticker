@@ -2,8 +2,10 @@ from time import sleep
 from datetime import datetime, timedelta
 from os import getenv
 import asyncio
-from json import loads
+
 import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.dates import DateFormatter
 
 from click import group, argument, option
 
@@ -80,10 +82,11 @@ def track(url: str, insecure: bool, interval: int):
 
 
 @main.command()
-@argument('path', type = str, default = 'log.jsonl')
+@argument('path', type = str, default = 'assets/log.jsonl')
+@argument('log', type = str, default = 'assets/log.csv')
 @option('--end-time', '-e', type = str, default = '07-05-2025 12:48:30')
 @option('--interval', '-t', type = int, default = INTERVAL)
-def parse_logs(path: str, end_time: str, interval: int):
+def parse_logs(path: str, log: str, end_time: str, interval: int):
     measurement_time = datetime.strptime(end_time, DATETIME_FORMAT)
 
     with open(path, 'r', encoding = 'utf-8') as file:
@@ -144,8 +147,86 @@ def parse_logs(path: str, end_time: str, interval: int):
 
         dfs.append(df)
 
+    df = df.copy()
+
+    df['Вход со стороны Иорданской лестницы'] = 100
+    df['Вход со стороны Церковной лестницы'] = 100
+    df['Вход со стороны Шуваловского проезда'] = 100
+    df['Входной билет в Главный Штаб'] = 100
+
+    df['Время измерения'] = datetime(2025, 5, 7, 12, 0, 0)
+    df['Время посещения'] = series[0].index
+
+    df = df.set_index(['Время посещения', 'Время измерения'])
+
+    dfs.append(df)
+
     df = pd.concat(reversed(dfs))
-    df.to_csv('log.csv')
+    df.to_csv(log)
+
+
+@main.command()
+@argument('path', type = str, default = 'assets/log.csv')
+@argument('plot', type = str, default = 'assets/plot.png')
+def visualize(path: str, plot: str):
+    df = pd.read_csv(
+        path,
+        parse_dates=['Время посещения', 'Время измерения'],
+        dayfirst=False  # Adjust if dates are in day-month format
+    )
+
+    # Get unique visit times
+    visit_times = df['Время посещения'].unique()
+
+    # Columns to visualize
+    columns = [
+        'Вход со стороны Иорданской лестницы',
+        'Вход со стороны Церковной лестницы',
+        'Вход со стороны Шуваловского проезда',
+        'Входной билет в Главный Штаб'
+    ]
+
+    # Create figure with subplots
+    fig, axs = plt.subplots(2, 2, figsize = (30, 20))
+    plt.subplots_adjust(hspace = 0.5)
+
+    axs = [item for ax in axs for item in ax]
+
+    # Plot each column in separate subplot
+    for idx, col in enumerate(columns):
+        ax = axs[idx]
+
+        # Plot lines for each visit time
+        for vt in visit_times:
+            subset = df[df['Время посещения'] == vt]
+            ax.plot(
+                subset['Время измерения'],
+                subset[col],
+                # marker='o',
+                linestyle='-',
+                label = vt.strftime(DATETIME_FORMAT)
+            )
+
+        # Format subplot
+        ax.set_title(col, fontsize=12)
+        ax.set_xlabel('Время измерения', fontsize=10)
+        ax.set_ylabel('Количество билетов', fontsize=10)
+        ax.xaxis.set_major_formatter(DateFormatter('%H:%M:%S\n%d-%m-%Y'))
+        ax.tick_params(axis='x', rotation=45)
+        ax.grid(True, alpha=0.3)
+
+        # Add legend with smaller font
+        ax.legend(
+            bbox_to_anchor=(1.05, 1),
+            loc='upper left',
+            fontsize=6,
+            title='Время посещения',
+            title_fontsize=8
+        )
+
+    # Save and close
+    plt.savefig(plot, bbox_inches='tight', dpi=150)
+    plt.close()
 
 
 if __name__ == '__main__':
