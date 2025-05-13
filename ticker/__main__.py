@@ -27,7 +27,9 @@ def track(params: str, interval: int):
     while True:
         driver.get(BASE_URL.format(params = params))
 
-        n_attempts = 5
+        n_attempts = 2
+
+        selected = False
 
         while True:
             try:
@@ -38,15 +40,21 @@ def track(params: str, interval: int):
 
                 if n_attempts > 0:
                     n_attempts -= 1
-                    sleep(0.5)
+                    sleep(0.2)
                 else:
                     break
             else:
                 input_counter_up = input_counter_ups[0]
                 input_counter_up.click()
+
+                selected = True
+
                 break
 
-        n_attempts = 5
+        if not selected:
+            continue
+
+        n_attempts = 2
 
         while True:
             try:
@@ -56,7 +64,7 @@ def track(params: str, interval: int):
 
                 if n_attempts > 0:
                     n_attempts -= 1
-                    sleep(0.5)
+                    sleep(0.2)
                 else:
                     break
             else:
