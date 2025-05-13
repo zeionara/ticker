@@ -1,20 +1,16 @@
 from time import sleep
-from datetime import datetime
-from os import getenv
-import asyncio
 
 from click import group, argument, option
 
-from requests import get, post
-from telegram.ext import Application, ApplicationBuilder
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support.wait import WebDriverWait
+# from selenium.webdriver.common.action_chains import ActionChains
 
 
 INTERVAL = 20  # seconds
-
-TG_BOT_TOKEN = getenv('TG_BOT_TOKEN')
-TG_CHAT_ID = int(getenv('TG_CHAT_ID'))
-
-URL = 'https://tickets.hermitagemuseum.org/event/{hash_id}'
+# BASE_URL = 'https://ticketscloud.com/v1/widgets/common?'
 
 
 @group()
@@ -22,52 +18,30 @@ def main():
     pass
 
 
-def notify(app: Application, hash_id: str):
-    async def send_message():
-        await app.bot.sendMessage(TG_CHAT_ID, 'The tickets are released!\n\n' + URL.format(hash_id = hash_id))
-
-    asyncio.run(send_message())
-
-
-def now():
-    return datetime.now().strftime('%d-%m-%Y %H:%M:%S')
-
-
 @main.command()
-@argument('url', type = str, default = 'https://tickets.hermitagemuseum.org/api/afisha')
-@option('--insecure', '-i', is_flag = True)
+@argument('url', type = str, default = 'https://monasterio.moscow/goodbyearma')
 @option('--interval', '-t', type = int, default = INTERVAL)
-def track(url: str, insecure: bool, interval: int):
-    app = ApplicationBuilder().token(TG_BOT_TOKEN).build()
+def track(url: str, interval: int):
+    driver = webdriver.Chrome()
+    # ac = ActionChains(driver)
+    wait = WebDriverWait(driver, timeout = 2)
 
     while True:
-        page = get(url, verify = not insecure)
+        driver.get(url)
 
-        # response = loads(page.text.encode('latin-1').decode('unicode-escape'))
-        response = page.json()
+        try:
+            buy_ticket_button = driver.find_elements(By.XPATH, "//*[contains(text(), 'Купить Билет')]/ancestor::a")[-1]
+        except NoSuchElementException:
+            print('No such element.')
+        else:
+            wait.until(lambda _: buy_ticket_button.is_displayed())
 
-        for action in response['response']['action']:
-            description = action.get('descript_ru')
+            buy_ticket_button.click()
+            # ac.move_to_element(buy_ticket_button).perform()
+            # sleep(1)
+            # ac.click(buy_ticket_button).perform()
 
-            if description is not None and description.startswith('Бесплатный'):
-                hash_id = action.get('hash_id')
-
-                page = post('https://tickets.hermitagemuseum.org/api/no-scheme', json = {'hash': hash_id}, verify = not insecure)
-
-                response = page.json()
-
-                if response['response']['action']:
-                    notify(app, hash_id)
-
-                    print(f'{now()} The tickets are available @ {URL.format(hash_id = hash_id)}. Notification has been sent.')
-                    return
-                else:
-                    print(f'{now()} The tickets are not available @ {URL.format(hash_id = hash_id)}. Retrying in {interval} seconds.')
-                    # print(response)
-                    # print()
-
-                    sleep(interval)
-                    break
+        sleep(interval)
 
 
 if __name__ == '__main__':

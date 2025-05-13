@@ -9,7 +9,7 @@ To run the app create a conda environment and install necessary dependencies:
 ```sh
 conda create -n ticker python=3.12
 conda activate ticker
-pip install click requests python-telegram-bot
+pip install selenium
 ```
 
 ## Running
