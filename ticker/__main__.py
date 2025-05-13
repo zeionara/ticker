@@ -5,12 +5,11 @@ from click import group, argument, option
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.support.wait import WebDriverWait
-# from selenium.webdriver.common.action_chains import ActionChains
 
 
-INTERVAL = 20  # seconds
-# BASE_URL = 'https://ticketscloud.com/v1/widgets/common?'
+INTERVAL = 1  # seconds
+MAX_INTERVAL = 3600  # seconds
+BASE_URL = 'https://ticketscloud.com/v1/widgets/common?{params}'
 
 
 @group()
@@ -19,29 +18,61 @@ def main():
 
 
 @main.command()
-@argument('url', type = str, default = 'https://monasterio.moscow/goodbyearma')
+@argument('params', type = str, default = 'event=67be5c63afafa19227950d1c&token=eyJhbGciOiJIUzI1NiIsImlzcyI6InRpY2tldHNjbG91ZC5ydSIsInR5cCI6IkpXVCJ9.eyJwIjoiNjVlNzEyZjBhZTRjNWUyOGNmNGZkZDNhIn0.9WpViaffsyOmzAOTYgCotINkLlFSMgSGB8dI7uFzU3w&lang=ru')
 @option('--interval', '-t', type = int, default = INTERVAL)
-def track(url: str, interval: int):
+def track(params: str, interval: int):
     driver = webdriver.Chrome()
-    # ac = ActionChains(driver)
-    wait = WebDriverWait(driver, timeout = 2)
+    ordered = False
 
     while True:
-        driver.get(url)
+        driver.get(BASE_URL.format(params = params))
 
-        try:
-            buy_ticket_button = driver.find_elements(By.XPATH, "//*[contains(text(), 'Купить Билет')]/ancestor::a")[-1]
-        except NoSuchElementException:
-            print('No such element.')
-        else:
-            wait.until(lambda _: buy_ticket_button.is_displayed())
+        n_attempts = 5
 
-            buy_ticket_button.click()
-            # ac.move_to_element(buy_ticket_button).perform()
-            # sleep(1)
-            # ac.click(buy_ticket_button).perform()
+        while True:
+            try:
+                # buy_ticket_button = driver.find_elements(By.CLASS_NAME, "//*[contains(text(), 'Купить Билет')]/ancestor::a")[-1]
+                input_counter_ups = driver.find_elements(By.CLASS_NAME, "input-counter_up")
+            except NoSuchElementException:
+                print('No such element.')
+
+                if n_attempts > 0:
+                    n_attempts -= 1
+                    sleep(0.5)
+                else:
+                    break
+            else:
+                input_counter_up = input_counter_ups[0]
+                input_counter_up.click()
+                break
+
+        n_attempts = 5
+
+        while True:
+            try:
+                submits = driver.find_elements(By.CLASS_NAME, "ticket-list__submit-btn")
+            except NoSuchElementException:
+                print('No such element.')
+
+                if n_attempts > 0:
+                    n_attempts -= 1
+                    sleep(0.5)
+                else:
+                    break
+            else:
+                submit = submits[0]
+                submit.click()
+
+                ordered = True
+
+                break
+
+        if ordered:
+            break
 
         sleep(interval)
+
+    sleep(MAX_INTERVAL)
 
 
 if __name__ == '__main__':
