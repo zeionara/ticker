@@ -13,6 +13,7 @@ INTERVAL = 20  # seconds
 
 TG_BOT_TOKEN = getenv('TG_BOT_TOKEN')
 TG_CHAT_ID = int(getenv('TG_CHAT_ID'))
+TC_KEY = getenv('TC_KEY')
 
 URL = 'https://tickets.hermitagemuseum.org/event/{hash_id}'
 
@@ -37,37 +38,51 @@ def now():
 @argument('url', type = str, default = 'https://tickets.hermitagemuseum.org/api/afisha')
 @option('--insecure', '-i', is_flag = True)
 @option('--interval', '-t', type = int, default = INTERVAL)
-def track(url: str, insecure: bool, interval: int):
-    app = ApplicationBuilder().token(TG_BOT_TOKEN).build()
+@option('--event', '-e', type = str)
+def track(url: str, insecure: bool, interval: int, event: str = None):
+    order = post(
+        'https://ticketscloud.com/v2/resources/orders',
+        json = {
+            'event': event
+        },
+        headers = {
+            'Authorization': f'key {TC_KEY}'
+        }
+    )
 
-    while True:
-        page = get(url, verify = not insecure)
+    print(order.status_code)
+    print(order.json())
 
-        # response = loads(page.text.encode('latin-1').decode('unicode-escape'))
-        response = page.json()
+    # app = ApplicationBuilder().token(TG_BOT_TOKEN).build()
 
-        for action in response['response']['action']:
-            description = action.get('descript_ru')
+    # while True:
+    #     page = get(url, verify = not insecure)
 
-            if description is not None and description.startswith('Бесплатный'):
-                hash_id = action.get('hash_id')
+    #     # response = loads(page.text.encode('latin-1').decode('unicode-escape'))
+    #     response = page.json()
 
-                page = post('https://tickets.hermitagemuseum.org/api/no-scheme', json = {'hash': hash_id}, verify = not insecure)
+    #     for action in response['response']['action']:
+    #         description = action.get('descript_ru')
 
-                response = page.json()
+    #         if description is not None and description.startswith('Бесплатный'):
+    #             hash_id = action.get('hash_id')
 
-                if response['response']['action']:
-                    notify(app, hash_id)
+    #             page = post('https://tickets.hermitagemuseum.org/api/no-scheme', json = {'hash': hash_id}, verify = not insecure)
 
-                    print(f'{now()} The tickets are available @ {URL.format(hash_id = hash_id)}. Notification has been sent.')
-                    return
-                else:
-                    print(f'{now()} The tickets are not available @ {URL.format(hash_id = hash_id)}. Retrying in {interval} seconds.')
-                    # print(response)
-                    # print()
+    #             response = page.json()
 
-                    sleep(interval)
-                    break
+    #             if response['response']['action']:
+    #                 notify(app, hash_id)
+
+    #                 print(f'{now()} The tickets are available @ {URL.format(hash_id = hash_id)}. Notification has been sent.')
+    #                 return
+    #             else:
+    #                 print(f'{now()} The tickets are not available @ {URL.format(hash_id = hash_id)}. Retrying in {interval} seconds.')
+    #                 # print(response)
+    #                 # print()
+
+    #                 sleep(interval)
+    #                 break
 
 
 if __name__ == '__main__':
