@@ -18,7 +18,7 @@ def main():
 
 
 @main.command()
-@argument('params', type = str, default = 'event=67be5c63afafa19227950d1c&token=eyJhbGciOiJIUzI1NiIsImlzcyI6InRpY2tldHNjbG91ZC5ydSIsInR5cCI6IkpXVCJ9.eyJwIjoiNjVlNzEyZjBhZTRjNWUyOGNmNGZkZDNhIn0.9WpViaffsyOmzAOTYgCotINkLlFSMgSGB8dI7uFzU3w&lang=ru')
+@argument('params', type = str, default = 'event=6823b1231b7a37f588951e7e&token=eyJhbGciOiJIUzI1NiIsImlzcyI6InRpY2tldHNjbG91ZC5ydSIsInR5cCI6IkpXVCJ9.eyJwIjoiNjVlNzEyZjBhZTRjNWUyOGNmNGZkZDNhIn0.9WpViaffsyOmzAOTYgCotINkLlFSMgSGB8dI7uFzU3w&lang=ru')
 @option('--interval', '-t', type = int, default = INTERVAL)
 def track(params: str, interval: int):
     driver = webdriver.Chrome()
@@ -44,6 +44,16 @@ def track(params: str, interval: int):
                 else:
                     break
             else:
+                if len(input_counter_ups) < 1:
+                    print('No such element.')
+
+                    if n_attempts > 0:
+                        n_attempts -= 1
+                        sleep(0.2)
+                        continue
+                    else:
+                        break
+
                 input_counter_up = input_counter_ups[0]
                 input_counter_up.click()
 
@@ -52,6 +62,8 @@ def track(params: str, interval: int):
                 break
 
         if not selected:
+            sleep(interval)
+            print('Reloading...')
             continue
 
         n_attempts = 2
@@ -68,6 +80,16 @@ def track(params: str, interval: int):
                 else:
                     break
             else:
+                if len(submits) < 1:
+                    print('No such element.')
+
+                    if n_attempts > 0:
+                        n_attempts -= 1
+                        sleep(0.2)
+                        continue
+                    else:
+                        break
+
                 submit = submits[0]
                 submit.click()
 
