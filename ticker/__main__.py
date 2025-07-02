@@ -8,7 +8,9 @@ from selenium.common.exceptions import NoSuchElementException
 
 
 INTERVAL = 1  # seconds
+INDEX = 2  # index of option to select
 MAX_INTERVAL = 3600  # seconds
+N_ATTEMPTS = 2  # number of attempts to find counter ups on the page
 BASE_URL = 'https://ticketscloud.com/v1/widgets/common?{params}'
 
 
@@ -18,16 +20,20 @@ def main():
 
 
 @main.command()
-@argument('params', type = str, default = 'event=6823b1231b7a37f588951e7e&token=eyJhbGciOiJIUzI1NiIsImlzcyI6InRpY2tldHNjbG91ZC5ydSIsInR5cCI6IkpXVCJ9.eyJwIjoiNjVlNzEyZjBhZTRjNWUyOGNmNGZkZDNhIn0.9WpViaffsyOmzAOTYgCotINkLlFSMgSGB8dI7uFzU3w&lang=ru')
+@argument('params', type = str, default = 'event=686455e62f5a3e3b7072dfd7&token=eyJhbGciOiJIUzI1NiIsImlzcyI6InRpY2tldHNjbG91ZC5ydSIsInR5cCI6IkpXVCJ9.eyJwIjoiNjVlNzEyZjBhZTRjNWUyOGNmNGZkZDNhIn0.9WpViaffsyOmzAOTYgCotINkLlFSMgSGB8dI7uFzU3w&lang=ru')
 @option('--interval', '-t', type = int, default = INTERVAL)
-def track(params: str, interval: int):
+@option('--index', '-i', type = int, default = INDEX)
+@option('--attempts', '-a', type = int, default = N_ATTEMPTS)
+def track(params: str, interval: int, index: int, attempts: int):
     driver = webdriver.Chrome()
     ordered = False
+
+    assert index > 0, 'Index must be greater than zero'
 
     while True:
         driver.get(BASE_URL.format(params = params))
 
-        n_attempts = 2
+        n_attempts = N_ATTEMPTS if attempts is None else attempts
 
         selected = False
 
@@ -36,7 +42,7 @@ def track(params: str, interval: int):
                 # buy_ticket_button = driver.find_elements(By.CLASS_NAME, "//*[contains(text(), 'Купить Билет')]/ancestor::a")[-1]
                 input_counter_ups = driver.find_elements(By.CLASS_NAME, "input-counter_up")
             except NoSuchElementException:
-                print('No such element.')
+                print(f'No such element (counter up, error). Attempt {N_ATTEMPTS - n_attempts + 1}')
 
                 if n_attempts > 0:
                     n_attempts -= 1
@@ -45,16 +51,16 @@ def track(params: str, interval: int):
                     break
             else:
                 if len(input_counter_ups) < 1:
-                    print('No such element.')
+                    print(f'No such element (counter up, empty list). Attempt {N_ATTEMPTS - n_attempts + 1}')
 
-                    if n_attempts > 0:
+                    if n_attempts > 1:
                         n_attempts -= 1
                         sleep(0.2)
                         continue
                     else:
                         break
 
-                input_counter_up = input_counter_ups[0]
+                input_counter_up = input_counter_ups[min(index, len(input_counter_ups)) - 1]
                 input_counter_up.click()
 
                 selected = True
