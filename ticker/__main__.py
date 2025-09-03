@@ -21,11 +21,11 @@ def main():
 
 
 @main.command()
-@argument('params', type = str, default = 'event=686455e62f5a3e3b7072dfd7&token=eyJhbGciOiJIUzI1NiIsImlzcyI6InRpY2tldHNjbG91ZC5ydSIsInR5cCI6IkpXVCJ9.eyJwIjoiNjVlNzEyZjBhZTRjNWUyOGNmNGZkZDNhIn0.9WpViaffsyOmzAOTYgCotINkLlFSMgSGB8dI7uFzU3w&lang=ru')
+@argument('params', type = str, default = 'event=68b78e2bd3223a746990bafc&token=eyJhbGciOiJIUzI1NiIsImlzcyI6InRpY2tldHNjbG91ZC5ydSIsInR5cCI6IkpXVCJ9.eyJwIjoiNjVlNzEyZjBhZTRjNWUyOGNmNGZkZDNhIn0.9WpViaffsyOmzAOTYgCotINkLlFSMgSGB8dI7uFzU3w')
 @option('--interval', '-t', type = int, default = INTERVAL)
 @option('--index', '-i', type = int, default = INDEX)
 @option('--attempts', '-a', type = int, default = N_ATTEMPTS)
-@option('--attempt-interval', '-r', type = float, default = N_ATTEMPTS)
+@option('--attempt-interval', '-r', type = float, default = ATTEMPT_INTERVAL)
 def track(params: str, interval: int, index: int, attempts: int, attempt_interval: float):
     driver = webdriver.Chrome()
     ordered = False
@@ -46,7 +46,7 @@ def track(params: str, interval: int, index: int, attempts: int, attempt_interva
             except NoSuchElementException:
                 print(f'No such element (counter up, error). Attempt {N_ATTEMPTS - n_attempts + 1}')
 
-                if n_attempts > 0:
+                if n_attempts > 1:
                     n_attempts -= 1
                     sleep(attempt_interval)
                 else:
@@ -55,7 +55,7 @@ def track(params: str, interval: int, index: int, attempts: int, attempt_interva
                 if len(input_counter_ups) < 1:
                     print(f'No such element (counter up, empty list). Attempt {N_ATTEMPTS - n_attempts + 1}')
 
-                    if n_attempts > 0:
+                    if n_attempts > 1:
                         n_attempts -= 1
                         sleep(attempt_interval)
                         continue
@@ -81,7 +81,7 @@ def track(params: str, interval: int, index: int, attempts: int, attempt_interva
             except NoSuchElementException:
                 print('No such element.')
 
-                if n_attempts > 0:
+                if n_attempts > 1:
                     n_attempts -= 1
                     sleep(attempt_interval)
                 else:
@@ -90,7 +90,7 @@ def track(params: str, interval: int, index: int, attempts: int, attempt_interva
                 if len(submits) < 1:
                     print('No such element.')
 
-                    if n_attempts > 0:
+                    if n_attempts > 1:
                         n_attempts -= 1
                         sleep(attempt_interval)
                         continue
