@@ -12,6 +12,7 @@ from telegram.ext import Application, ApplicationBuilder
 
 INTERVAL = 30  # seconds
 TIMEOUT = 300  # seconds
+N_ATTEMPTS = 3
 
 TG_BOT_TOKEN = getenv('TG_BOT_TOKEN')
 TG_CHAT_ID = int(getenv('TG_CHAT_ID'))
@@ -50,11 +51,19 @@ def track(label: str, interval: int):
     url = URL.format(label = label)
 
     while True:
-        try:
-            response = get(url, timeout=TIMEOUT)
-        except Exception as e:
-            send_message(app, f'Failed to load page ({e})\n\n{url}')
-            break
+        attempt_count = 0
+        response = None
+
+        while response is None:
+            try:
+                response = get(url, timeout=TIMEOUT)
+            except Exception as e:
+                if attempt_count < N_ATTEMPTS:
+                    attempt_count += 1
+                    continue
+
+                send_message(app, f'Failed to load page after {N_ATTEMPTS} attempts ({e})\n\n{url}')
+                break
 
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'lxml')
